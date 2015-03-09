@@ -1,0 +1,6 @@
+/bin/
+/build/
+.gradle
+/incoming/
+*.log
+src/main/resources/twitter4j.properties
