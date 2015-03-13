@@ -65,6 +65,8 @@ public class UserCorpusCollector extends AbstractTwitterApp
 
   private Long userID;
   private String handle;
+  private boolean protectedAccount;
+  private TwitterException error;
 
   public UserCorpusCollector ()
   {
@@ -86,20 +88,40 @@ public class UserCorpusCollector extends AbstractTwitterApp
     this.userID = id;
   }
 
+  public boolean isProtectedAccount ()
+  {
+    return protectedAccount;
+  }
+
+  public TwitterException getError ()
+  {
+    return error;
+  }
+
   public List<Status> collect (int numTweets)
   {
     List<Status> tweets = Lists.newArrayList ();
     try
     {
+      this.protectedAccount = false;
+      this.error = null;
+
       initialise ();
       if (userID == null)
       {
-        User profile = lookupProfile (userID != null ? userID : handle);
+        User profile = lookupProfile (handle);
 
         if (profile == null)
         {
-          LOG.warn ("Lookup of user @" + (userID != null ? userID : handle) + " failed. Check log.");
+          LOG.warn ("Lookup of user @" + handle + " failed. Check log.");
           return tweets; // lookup failed
+        }
+
+        if (profile.isProtected ())
+        {
+          LOG.info ("Account @" + handle + " is protected. Skipping...");
+          this.protectedAccount = true;
+          return tweets;
         }
 
         this.handle = profile.getScreenName ();
@@ -112,6 +134,7 @@ public class UserCorpusCollector extends AbstractTwitterApp
           return tweets;
         }
       }
+
       String identifier = makeIdentifier ();
       LOG.info ("Collecting tweets for user " + identifier);
 
@@ -134,6 +157,7 @@ public class UserCorpusCollector extends AbstractTwitterApp
     {
       String identifier = makeIdentifier ();
       LOG.warn ("Failure while collecting @" + identifier + "'s timeline.", e);
+      this.error = e;
     }
     return tweets;
   }

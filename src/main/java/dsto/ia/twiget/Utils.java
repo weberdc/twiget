@@ -73,7 +73,7 @@ public class Utils
 
   private static SimpleDateFormat HMS = new SimpleDateFormat ("HH:mm:ss");
 
-  private static String nowStr ()
+  public static String nowStr ()
   {
     return HMS.format (new Date ());
   }
