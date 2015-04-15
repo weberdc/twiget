@@ -38,11 +38,20 @@ println ("A total of " + ids.size () + " accounts to review")
 def collector = new UserCorpusCollector ()
 def count = 0
 
-new File("incoming/HuT_neighbourhood_corpus-${ Utils.format (new Date ()) }.json").withWriter ('UTF-8') { out ->
+def dateStr = Utils.format (new Date ())
+def failedIDs = new FileWriter("incoming/failed_ids-${dateStr}.txt")
+
+new File("incoming/HuT_neighbourhood_corpus-${dateStr}.json").withWriter ('UTF-8') { out ->
   ids.each { id ->
     println ("Collecting tweets for @$id")
     collector.setId (id)
     def tweets = collector.collect (UserCorpusCollector.NO_LIMIT)
+    
+    if (collector.error) {
+      failedIDs << "$id\n"
+      failedIDs.flush ()
+    }      
+    
     count += tweets.size ()
     println ("  Grabbed another " + tweets.size () + " tweets -> " + count + " so far...")
     //  corpus << tweets
@@ -53,4 +62,5 @@ new File("incoming/HuT_neighbourhood_corpus-${ Utils.format (new Date ()) }.json
     out.flush ()
   }
 }
+failedIDs.close ()
 println ("Collected " + count + " tweets")

@@ -43,16 +43,27 @@ println ("A total of " + ids.size () + " accounts to collect tweets from.")
 
 def collector = new UserCorpusCollector ()
 def count = 0
+def idCount = 1
+
+def dateStr = Utils.format (new Date ())
+def failedIDs = new FileWriter("${rootDir}/failed_ids-${dateStr}.txt")
 
 def outfile = new File("${rootDir}/${seedFN}-corpus.json")
 println ("Writing to ${outfile.absolutePath}")
 outfile.withWriter ('UTF-8') { out ->
   ids.each { id ->
-    println ("Collecting tweets for @$id")
+    println ("Collecting tweets for id ${idCount++}: @$id")
     collector.setId (id)
     def tweets = collector.collect (UserCorpusCollector.NO_LIMIT)
+    
+    if (collector.error) {
+      failedIDs << "$id\n"
+      failedIDs.flush ()
+    }
+    
     count += tweets.size ()
     println ("  Grabbed another " + tweets.size () + " tweets -> " + count + " so far...")
+
     //  corpus << tweets
     tweets.each { tweet ->
       out.write (JsonOutput.toJson (tweet))
@@ -61,4 +72,5 @@ outfile.withWriter ('UTF-8') { out ->
     out.flush ()
   }
 }
-println ("Collected " + count + " tweets in " + timer.elapsed(TimeUnit.MINUTES) + " minutes.")
+failedIDs.close ()
+println ("Collected " + count + " tweets in " + timer.elapsed (TimeUnit.MINUTES) + " minutes.")
