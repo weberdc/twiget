@@ -3,7 +3,9 @@ package dsto.ia.twiget;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -15,9 +17,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import twitter4j.IDs;
 import twitter4j.RateLimitStatus;
+import twitter4j.ResponseList;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterResponse;
+import twitter4j.User;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -208,5 +212,92 @@ public class Utils
       m.put (objects[2 * i], objects[2 * i + 1]);
 
     return m;
+  }
+
+  public static void grabUsers (Twitter twitter, List<Long> userIds, Set<User> toPopulate)
+  {
+    try
+    {
+      ResponseList<User> lookupResponse = null;
+      RateLimitStatus rateLimitStatus = twitter.getRateLimitStatus ("users").get ("/users/lookup");
+      int cursor = 0;
+      int it = 1;
+      while (cursor < userIds.size ())
+      {
+        pauseBetweenAPICalls (rateLimitStatus);
+
+        int toIndex = cursor + 100 < userIds.size () ? cursor + 100 : userIds.size ();
+        List<Long> sublist = userIds.subList (cursor, toIndex);
+        cursor = toIndex;
+        
+        long[] idSublist = new long[sublist.size ()];
+        for (int i = 0; i < sublist.size (); i++)
+          idSublist[i] = sublist.get (i).longValue ();
+          
+        lookupResponse = twitter.lookupUsers (idSublist);
+        
+        if (lookupResponse.size () < 1) break;
+
+        toPopulate.addAll (lookupResponse);
+
+        rateLimitStatus = lookupResponse.getRateLimitStatus ();
+        if (rateLimitStatus == null) System.err.println ("RateLimitStatus is null!");
+        int remaining = rateLimitStatus != null ? rateLimitStatus.getRemaining () : 0;
+        System.out.printf ("#%03d cursor %d, remaining calls %d\n", (it++), cursor, remaining);
+
+        System.out.println ("Number of profiles grabbed " + lookupResponse.size ());
+
+      }
+      if (lookupResponse != null && rateLimitStatus != null)
+      {
+        int secondsUntilReset = rateLimitStatus.getSecondsUntilReset ();
+        int remainingCalls = rateLimitStatus.getRemaining ();
+        System.out.println (secondsUntilReset + " until reset... " + remainingCalls + " calls remain");
+      }
+
+    } catch (TwitterException e)
+    {
+      e.printStackTrace ();
+    }
+  }
+
+  public static List<User> grabUpTo100Users (Twitter twitter, List<Long> userIds)
+  {
+    ResponseList<User> lookupResponse = null;
+    try
+    {
+      RateLimitStatus rateLimitStatus = twitter.getRateLimitStatus ("users").get ("/users/lookup");
+      int it = 1;
+
+      pauseBetweenAPICalls (rateLimitStatus);
+
+      int toIndex = 100 < userIds.size () ? 100 : userIds.size ();
+      List<Long> sublist = userIds.subList (0, toIndex);
+      
+      long[] idSublist = new long[sublist.size ()];
+      for (int i = 0; i < sublist.size (); i++)
+        idSublist[i] = sublist.get (i).longValue ();
+        
+      lookupResponse = twitter.lookupUsers (idSublist);
+      
+      rateLimitStatus = lookupResponse.getRateLimitStatus ();
+      if (rateLimitStatus == null) System.err.println ("RateLimitStatus is null!");
+      int remaining = rateLimitStatus != null ? rateLimitStatus.getRemaining () : 0;
+      System.out.printf ("#%03d, remaining calls %d\n", (it++), remaining);
+
+      System.out.println ("Number of profiles grabbed " + lookupResponse.size ());
+
+      if (lookupResponse != null && rateLimitStatus != null)
+      {
+        int secondsUntilReset = rateLimitStatus.getSecondsUntilReset ();
+        int remainingCalls = rateLimitStatus.getRemaining ();
+        System.out.println (secondsUntilReset + " until reset... " + remainingCalls + " calls remain");
+      }
+
+    } catch (TwitterException e)
+    {
+      e.printStackTrace ();
+    }
+    return (lookupResponse == null ? Collections.emptyList () : lookupResponse);
   }
 }

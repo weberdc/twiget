@@ -13,7 +13,7 @@ public class AbstractTwitterApp
 {
   protected static Logger LOG = LogManager.getLogger ("dsto.ia.twiget");
 
-  protected Twitter twitter;
+  public Twitter twitter;
   protected RateLimitStatus rateLimitStatus;
 
   public void initialise () throws TwitterException
