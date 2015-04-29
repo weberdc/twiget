@@ -12,6 +12,17 @@ if (! args.contains ('--no-proxy')) {
   println ("Proxy configured...")
 }
 
+def tweetsPerPerson = UserCorpusCollector.NO_LIMIT
+def limits = args.find { a -> a.startsWith ('--tweet-limit=') }
+if (limits) limits -= '--tweet-limit='
+
+if (limits) {
+  tweetsPerPerson = Integer.parseInt (limits)
+  println ("Collecting $tweetsPerPerson tweets for each person")
+} else {
+  println ("Collecting up to 3200 tweets for each person")
+}
+
 def timer = Stopwatch.createStarted ()
 
 def stripOptions (argList) { argList.findAll { ! it.startsWith ('-') } }
@@ -54,7 +65,7 @@ outfile.withWriter ('UTF-8') { out ->
   ids.each { id ->
     println ("Collecting tweets for id ${idCount++}: @$id")
     collector.setId (id)
-    def tweets = collector.collect (UserCorpusCollector.NO_LIMIT)
+    def tweets = collector.collect (tweetsPerPerson)
     
     if (collector.error) {
       failedIDs << "$id\n"

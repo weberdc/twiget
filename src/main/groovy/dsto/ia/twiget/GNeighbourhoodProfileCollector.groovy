@@ -1,9 +1,11 @@
 package dsto.ia.twiget
 
 import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 import java.util.concurrent.TimeUnit
 
+import twitter4j.TwitterObjectFactory
 import twitter4j.User
 
 import com.google.common.base.Stopwatch
@@ -44,6 +46,7 @@ def seedFN = seedsFile.name - ".csv"
 println ("A total of " + seedNames.size () + " accounts to collect tweets from.")
 
 def snowballCollector = new SnowballCollector ()
+snowballCollector.initialise ()
 def count = 0
 def idCount = 1
 def idsToCollect = Sets.newHashSet ()
@@ -53,56 +56,68 @@ def dateStr = Utils.format (new Date ())
 def failedNames = new FileWriter("${rootDir}/failed_names-${dateStr}.txt")
 
 def outfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles.json")
-println ("Writing to ${outfile.absolutePath}")
-outfile.withWriter ('UTF-8') { out ->
-  println ("Collecting ${seedNames.size ()} seed neighbourhoods")
-  seedNames.each { String id ->
-    println ("Collecting neighbourhood for id ${idCount++}: @$id")
-    def n = snowballCollector.collectNeighbourhoodOf (id)
-    
-    if (! n.profile) {
-      failedNames << "$id\n"
-      failedNames.flush ()
-    }
+//println ("Writing to ${outfile.absolutePath}")
+//outfile.withWriter ('UTF-8') { out ->
+//  println ("Collecting ${seedNames.size ()} seed neighbourhoods")
+//  seedNames.each { String id ->
+//    println ("Collecting neighbourhood for id ${idCount++}: @$id")
+//    def n = snowballCollector.collectNeighbourhoodOf (id)
+//    
+//    if (! n.profile) {
+//      failedNames << "$id\n"
+//      failedNames.flush ()
+//    }
+//
+//    idsToCollect.addAll (n.followeeIDs)
+//    idsToCollect.addAll (n.followerIDs)
+//    println ("idsToCollect now this big: " + idsToCollect.size ())
+//
+//    //  corpus << tweets
+//    out.write (JsonOutput.toJson (n))
+//    out.write ('\n')
+//    out.flush ()
+//    count++
+//  }
+//}
+//failedNames.close ()
+//
+//// grab neighbour profiles
+//def neighbourprofilesfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
+//println ("Writing to ${neighbourprofilesfile.absolutePath}")
+//neighbourprofilesfile.withWriter ('UTF-8') { out ->
+//  // collect follower/followee neighbourhoods
+//  println ("Collecting ${idsToCollect.size ()} neighbouring neighbourhoods")
+//  
+//  (idsToCollect as List<Long>).collate (100).each { ids ->
+//    def profiles = Utils.grabUpTo100Users (snowballCollector.twitter, ids as List<Long>)
+//    
+//    profiles.each { profile ->
+//      out.write (JsonOutput.toJson (profile))
+//      out.write ('\n')
+//    }
+//    out.flush ()
+//    println ("captured another ${profiles.size ()} profiles...")
+//    
+//    collectedProfiles.addAll (profiles)
+//  }
+//}
 
-    idsToCollect.addAll (n.followeeIDs)
-    idsToCollect.addAll (n.followerIDs)
-    println ("idsToCollect now this big: " + idsToCollect.size ())
 
-    //  corpus << tweets
-    out.write (JsonOutput.toJson (n))
-    out.write ('\n')
-    out.flush ()
-    count++
-  }
+def infile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
+//def json = new JsonSlurper ()
+infile.readLines ("UTF-8").each { line ->
+  collectedProfiles << TwitterObjectFactory.createUser (line)
 }
-failedNames.close ()
 
-// grab neighbour profiles
-def neighbourprofilesfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
-println ("Writing to ${neighbourprofilesfile.absolutePath}")
-neighbourprofilesfile.withWriter ('UTF-8') { out ->
-  // collect follower/followee neighbourhoods
-  println ("Collecting ${idsToCollect.size ()} neighbouring neighbourhoods")
-  
-  (idsToCollect as List<Long>).collate (100).each { ids ->
-    def profiles = Utils.grabUpTo100Users (snowballCollector.twitter, ids as List<Long>)
-    
-    profiles.each { profile ->
-      out.write (JsonOutput.toJson (profile))
-      out.write ('\n')
-    }
-    out.flush ()
-    println ("captured another ${profiles.size ()} profiles...")
-    
-    collectedProfiles.addAll (profiles)
-  }
-}
+println ("read in ${collectedProfiles.size ()} profiles")
+
+//System.exit (0)
 
 // build Neighbourhood objects with follower/followee IDs for all the collected profiles
 println ("Writing to ${outfile.absolutePath} again")
 outfile.withWriterAppend ('UTF-8') { out ->
-  profiles.each { User user ->
+  collectedProfiles.each { User user ->
+    println ("class: " + user.class + ": $user")
     println ("Collecting neighbourhood for id ${idCount++}: @${user.screenName}")
     println ("  followers: ${user.followersCount} followees: ${user.friendsCount}")
     def n = new Neighbourhood ()

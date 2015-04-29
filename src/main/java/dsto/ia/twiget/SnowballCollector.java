@@ -134,7 +134,7 @@ public class SnowballCollector extends AbstractTwitterApp
 
       System.out.println ("Writing to " + f.getAbsolutePath ());
 
-      out.write (json.writeValueAsString (Utils.toMap ("seed", n.getSnapshot ())) + '\n');
+      out.write (json.writeValueAsString (Utils.toMap ("seed", n.makeSnapshot ())) + '\n');
       // json.writeValue (out, Utils.toMap ("seed", n.getSnapshot ()));
       out.flush ();
 

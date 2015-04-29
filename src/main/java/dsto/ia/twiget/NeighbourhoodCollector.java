@@ -34,7 +34,7 @@ public class NeighbourhoodCollector extends AbstractTwitterApp
 
     LOG.info ("Writing corpus to " + jsonFile);
 
-    Utils.persist (n.getSnapshot (), out);
+    Utils.persist (n.makeSnapshot (), out);
 
     out.close ();
 

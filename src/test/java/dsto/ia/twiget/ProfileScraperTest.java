@@ -102,7 +102,7 @@ public class ProfileScraperTest
     System.out.println ("Followers: " + n.followerIDs.size ());
     System.out.println ("Followees: " + n.followeeIDs.size ());
 
-    writeToJSONFile (n.getSnapshot (), seedHandle + "_neighbourhood-");
+    writeToJSONFile (n.makeSnapshot (), seedHandle + "_neighbourhood-");
 
     MultiMap followerNetwork = collector.collectNetworkFrom (seedHandle, 1);
 

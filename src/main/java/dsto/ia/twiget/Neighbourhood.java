@@ -27,7 +27,7 @@ public class Neighbourhood
     this.followerIDs.addAll (followerIDs);
   }
 
-  public Map<String, Object> getSnapshot ()
+  public Map<String, Object> makeSnapshot ()
   {
     Map<String, Object> m = Maps.newHashMap ();
 

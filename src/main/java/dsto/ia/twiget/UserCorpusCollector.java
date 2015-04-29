@@ -138,6 +138,8 @@ public class UserCorpusCollector extends AbstractTwitterApp
       String identifier = makeIdentifier ();
       LOG.info ("Collecting tweets for user " + identifier);
 
+//      Utils.pauseBetweenAPICalls ((TwitterResponse) null);
+
       int pageno = 1;
       if (numTweets == NO_LIMIT) numTweets = Integer.MAX_VALUE;
       while (tweets.size () < numTweets)
