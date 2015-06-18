@@ -49,4 +49,20 @@ Collects the tweets from one specific user, specified with a screen name or a Tw
 
 Starting from a specific user (screen name or Twitter ID), collect the follower/followee relationships down to a particular depth and just report who follows whom as a multimap.
 
+## replace_all_ids_with_names.groovy
+
+Groovy script that takes two parameters, the first is a map file (id <space> name on each line) and the second is a text file with IDs. If the text file has IDs in the given map, they are replaced with the corresponding names. Output is send to stdout. If the second parameter (the text file) is a hyphen ('-'), then input is sought from stdin, to allow the script to be used in pipes.
+
+## Useful command lines
+
+Pulling the account's ID and screen name out of each line. These commands won't work unless you include the "E" (or an "r"), as these stipulate that the extended regular expression syntax is going to be used.
+
+ * `head -3 HuT_neighbourhood_public_profiles_and_follower_info-resolved-20150317.json | jq -c '[.id] + [.neighbourhood.user.screenName]' | sed 's/,/ /' | sed 's/"//g' | sed 's/^\[//' | sed 's/\]$//' | less`
+ * `head -3 HuT_neighbourhood_public_profiles_and_follower_info-resolved-20150317.json | jq -c '[.id] + [.neighbourhood.user.screenName]' | sed -Ee 's,\[(.*)\],\1,' -e 's/,/ /g' | less`
+ * `head -3 HuT_neighbourhood_public_profiles_and_follower_info-resolved-20150317.json | jq -c '[.id] + [.neighbourhood.user.screenName]' | sed -Ee 's,(\[|\]),,g' -e 's/,/ /g' | less`
+ * `head -3 HuT_neighbourhood_public_profiles_and_follower_info-resolved-20150317.json | jq -c '[.id] + [.neighbourhood.user.screenName]' | sed -Ee 's,^\[([^]]*)\]$,\1,' -e 's/,/ /g' | less`
+
+## GExtractDomains.groovy
+
+Groovy script to extract all URL domains it can from `<stdin>`. The JSON map of domains to counts is send to `<stdout>`. The `--pretty|-p` flag prints the map nicely, putting one domain and count per line. The `--debug|-v` flag turns on debug printlns. The `--help|-h|-q` flag prints the help text.
 
