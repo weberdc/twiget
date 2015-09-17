@@ -138,7 +138,7 @@ public class UserCorpusCollector extends AbstractTwitterApp
       String identifier = makeIdentifier ();
       LOG.info ("Collecting tweets for user " + identifier);
 
-//      Utils.pauseBetweenAPICalls ((TwitterResponse) null);
+      // Utils.pauseBetweenAPICalls ((TwitterResponse) null);
 
       int pageno = 1;
       if (numTweets == NO_LIMIT) numTweets = Integer.MAX_VALUE;
@@ -147,18 +147,37 @@ public class UserCorpusCollector extends AbstractTwitterApp
         int oldSize = tweets.size ();
         Paging page = new Paging (pageno++, 200);
 
-        ResponseList<Status> userTimelineResponse = twitter.getUserTimeline (userID, page);
-        tweets.addAll (userTimelineResponse);
+        ResponseList<Status> userTimelineResponse = null;
+        try
+        {
+          userTimelineResponse = twitter.getUserTimeline (userID, page);
+          tweets.addAll (userTimelineResponse);
+
+        } catch (TwitterException e)
+        {
+          LOG.warn ("Failure while collecting @" + identifier + "'s timeline.", e);
+
+          // if a pause is required, why not pause here?
+          Utils.pauseBetweenAPICalls (e.getRateLimitStatus ());
+
+          this.error = e;
+
+          break;
+        }
 
         if (oldSize == tweets.size ()) break;
 
-        Utils.pauseBetweenAPICalls (userTimelineResponse);
+        if (userTimelineResponse != null) Utils.pauseBetweenAPICalls (userTimelineResponse);
       }
 
     } catch (TwitterException e)
     {
       String identifier = makeIdentifier ();
       LOG.warn ("Failure while collecting @" + identifier + "'s timeline.", e);
+
+      // if a pause is required, why not pause here?
+      Utils.pauseBetweenAPICalls (e.getRateLimitStatus ());
+
       this.error = e;
     }
     return tweets;

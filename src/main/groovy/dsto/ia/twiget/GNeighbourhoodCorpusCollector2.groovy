@@ -13,9 +13,10 @@ if (! args.contains ('--no-proxy')) {
 
 def timer = Stopwatch.createStarted ()
 
-def rootDir = 'incoming/may2015/20150505-1128'
+def rootDir = '../../data/wasabi'//'incoming/may2015/20150505-1128'
 def seedFiles = [
-  "${rootDir}/seedlist-neighbourhood_profiles.json"
+  //  "${rootDir}/seedlist-neighbourhood_profiles.json"
+  "${rootDir}/wasabi_seeds-neighbourhood_profiles.json"
 ]
 
 def ids = Sets.newHashSet ()

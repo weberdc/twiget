@@ -44,7 +44,7 @@ public class ProfileScraperTest
   @Test
   public void testFindWeberdc () throws IOException
   {
-    String handle = /* "wasabi_team3"; */"weberdc"; // "julianburnside";
+    String handle = "wasabi_team3"; // "weberdc"; // "julianburnside";
     ProfileScraper scraper = new ProfileScraper (handle);
     System.out.println ('@' + handle + " has " + scraper.getNumFollowers () + " followers");
     scraper.getFollowerIds ();
@@ -92,11 +92,10 @@ public class ProfileScraperTest
   @Test
   public void testSnowballIDCollect () throws IOException, TwitterException
   {
-    String seedHandle = "weberdc";// "wasabi_team1";// "extra_dcw";
+    String seedHandle = /* "weberdc"; */"wasabi_team1";// */"extra_dcw";
     SnowballCollector collector = new SnowballCollector ();
-    collector.initialise ();
 
-    Neighbourhood n = collector.collectNeighbourhoodOf (seedHandle); // profile, follower IDs, followee IDs
+    Neighbourhood n = collector.collectNeighbourhoodOf (seedHandle, true); // profile, follower IDs, followee IDs
 
     System.out.printf ("Profile %s (%d)\n", n.profile.getName (), n.profile.getId ());
     System.out.println ("Followers: " + n.followerIDs.size ());

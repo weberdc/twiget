@@ -11,6 +11,8 @@ import twitter4j.User
 import com.google.common.base.Stopwatch
 import com.google.common.collect.Sets
 
+println ("RUNNING GNeighbourhoodProfileCollector")
+
 if (! args.contains ('--no-proxy')) {
   GUtils.configureProxy ("/home/${System.properties.'user.name'}/.gradle/gradle.properties")
   println ("Proxy configured...")
@@ -18,10 +20,14 @@ if (! args.contains ('--no-proxy')) {
 
 def timer = Stopwatch.createStarted ()
 
-def stripOptions (argList) { argList.findAll { ! it.startsWith ('-') } }
+def stripOptions (argList) {
+  argList.findAll {
+    ! it.startsWith ('-')
+  }
+}
 
 if (! stripOptions (args).size ()) {
-  println ("Must supply a path to a seed file as an argument")
+  println ("Must supply a path to a seed file (.csv) as an argument")
   return
 } else {
   println ("Running with args: ${args.join (' ')}")
@@ -56,58 +62,58 @@ def dateStr = Utils.format (new Date ())
 def failedNames = new FileWriter("${rootDir}/failed_names-${dateStr}.txt")
 
 def outfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles.json")
-//println ("Writing to ${outfile.absolutePath}")
-//outfile.withWriter ('UTF-8') { out ->
-//  println ("Collecting ${seedNames.size ()} seed neighbourhoods")
-//  seedNames.each { String id ->
-//    println ("Collecting neighbourhood for id ${idCount++}: @$id")
-//    def n = snowballCollector.collectNeighbourhoodOf (id)
-//    
-//    if (! n.profile) {
-//      failedNames << "$id\n"
-//      failedNames.flush ()
-//    }
-//
-//    idsToCollect.addAll (n.followeeIDs)
-//    idsToCollect.addAll (n.followerIDs)
-//    println ("idsToCollect now this big: " + idsToCollect.size ())
-//
-//    //  corpus << tweets
-//    out.write (JsonOutput.toJson (n))
-//    out.write ('\n')
-//    out.flush ()
-//    count++
-//  }
-//}
-//failedNames.close ()
-//
-//// grab neighbour profiles
-//def neighbourprofilesfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
-//println ("Writing to ${neighbourprofilesfile.absolutePath}")
-//neighbourprofilesfile.withWriter ('UTF-8') { out ->
-//  // collect follower/followee neighbourhoods
-//  println ("Collecting ${idsToCollect.size ()} neighbouring neighbourhoods")
-//  
-//  (idsToCollect as List<Long>).collate (100).each { ids ->
-//    def profiles = Utils.grabUpTo100Users (snowballCollector.twitter, ids as List<Long>)
-//    
-//    profiles.each { profile ->
-//      out.write (JsonOutput.toJson (profile))
-//      out.write ('\n')
-//    }
-//    out.flush ()
-//    println ("captured another ${profiles.size ()} profiles...")
-//    
-//    collectedProfiles.addAll (profiles)
-//  }
-//}
+println ("Writing to ${outfile.absolutePath}")
+outfile.withWriter ('UTF-8') { out ->
+  println ("Collecting ${seedNames.size ()} seed neighbourhoods")
+  seedNames.each { String id ->
+    println ("Collecting neighbourhood for id ${idCount++}: @$id")
+    def n = snowballCollector.collectNeighbourhoodOf (id, false)
 
+    if (! n.profile) {
+      failedNames << "$id\n"
+      failedNames.flush ()
+    }
 
-def infile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
-//def json = new JsonSlurper ()
-infile.readLines ("UTF-8").each { line ->
-  collectedProfiles << TwitterObjectFactory.createUser (line)
+    idsToCollect.addAll (n.followeeIDs)
+    idsToCollect.addAll (n.followerIDs)
+    println ("idsToCollect now this big: " + idsToCollect.size ())
+
+    //  corpus << tweets
+    out.write (JsonOutput.toJson (n.makeSnapshot ()))
+    out.write ('\n')
+    out.flush ()
+    count++
+  }
 }
+failedNames.close ()
+
+// grab neighbour profiles
+def neighbourprofilesfile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
+println ("Writing to ${neighbourprofilesfile.absolutePath}")
+neighbourprofilesfile.withWriter ('UTF-8') { out ->
+  // collect follower/followee neighbourhoods
+  println ("Collecting ${idsToCollect.size ()} neighbouring neighbourhoods")
+
+  (idsToCollect as List<Long>).collate (100).each { ids ->
+    def profiles = Utils.grabUpTo100Users (snowballCollector.twitter, ids as List<Long>)
+
+    profiles.each { profile ->
+      out.write (JsonOutput.toJson (profile))
+      out.write ('\n')
+    }
+    out.flush ()
+    println ("captured another ${profiles.size ()} profiles...")
+
+    collectedProfiles.addAll (profiles)
+  }
+}
+
+
+//def infile = new File("${rootDir}/${seedFN}-neighbourhood_profiles-tmp.json")
+//def json = new JsonSlurper ()
+//infile.readLines ("UTF-8").each { line ->
+//  collectedProfiles << TwitterObjectFactory.createUser (line)
+//}
 
 println ("read in ${collectedProfiles.size ()} profiles")
 
@@ -117,19 +123,21 @@ println ("read in ${collectedProfiles.size ()} profiles")
 println ("Writing to ${outfile.absolutePath} again")
 outfile.withWriterAppend ('UTF-8') { out ->
   collectedProfiles.each { User user ->
-    println ("class: " + user.class + ": $user")
+    //println ("class: " + user.class + ": $user")
     println ("Collecting neighbourhood for id ${idCount++}: @${user.screenName}")
     println ("  followers: ${user.followersCount} followees: ${user.friendsCount}")
     def n = new Neighbourhood ()
     n.profile = user
 
-    Utils.fetchFollowerIds (snowballCollector.twitter, user.id, n.followerIDs, true)
-    Utils.fetchFolloweeIds (snowballCollector.twitter, user.id, n.followeeIDs, true)
+    if (user.getFollowersCount () < SnowballCollector.FOLLOWER_COUNT_THRESHOLD)
+      Utils.fetchFollowerIds (snowballCollector.twitter, user.id, n.followerIDs, true)
+    if (user.getFriendsCount () < SnowballCollector.FOLLOWEE_COUNT_THRESHOLD)
+      Utils.fetchFolloweeIds (snowballCollector.twitter, user.id, n.followeeIDs, true)
 
-    out.write (JsonOutput.toJson (n))
+    out.write (JsonOutput.toJson (n.makeSnapshot ()))
     out.write ('\n')
     out.flush ()
-    
+
     count++
     println ("Collected ${n.followerIDs.size ()} follower IDs and ${n.followeeIDs.size ()} followee IDs.")
   }

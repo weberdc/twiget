@@ -25,8 +25,9 @@ import com.google.common.collect.Sets;
 public class SnowballCollector extends AbstractTwitterApp
 {
   public static final int FOLLOWER_COUNT_THRESHOLD = 50001;
+  public static final int FOLLOWEE_COUNT_THRESHOLD = 2001;
 
-  public Neighbourhood collectNeighbourhoodOf (Object seed) // seed is String handle or Long userID
+  public Neighbourhood collectNeighbourhoodOf (Object seed, boolean force) // seed is String handle or Long userID
   {
     Neighbourhood neighbourhood = new Neighbourhood ();
     neighbourhood.profile = lookupProfile (seed);
@@ -38,8 +39,10 @@ public class SnowballCollector extends AbstractTwitterApp
     } else
     {
       // collect follower/ee stuff
-      Utils.fetchFollowerIds (twitter, neighbourhood.profile.getId (), neighbourhood.followerIDs, true);
-      Utils.fetchFolloweeIds (twitter, neighbourhood.profile.getId (), neighbourhood.followeeIDs, true);
+      if (force || neighbourhood.profile.getFollowersCount () < FOLLOWER_COUNT_THRESHOLD)
+        Utils.fetchFollowerIds (twitter, neighbourhood.profile.getId (), neighbourhood.followerIDs, true);
+      if (force || neighbourhood.profile.getFriendsCount () < FOLLOWEE_COUNT_THRESHOLD)
+        Utils.fetchFolloweeIds (twitter, neighbourhood.profile.getId (), neighbourhood.followeeIDs, true);
     }
 
     return neighbourhood;
@@ -127,7 +130,7 @@ public class SnowballCollector extends AbstractTwitterApp
     {
       initialise ();
 
-      Neighbourhood n = collectNeighbourhoodOf (userID);
+      Neighbourhood n = collectNeighbourhoodOf (userID, true);
       String fn = n.profile.getScreenName () + "_neighbourhood_profiles.json";
       File f = new File (fn);
       Writer out = new BufferedWriter (new FileWriter (f));

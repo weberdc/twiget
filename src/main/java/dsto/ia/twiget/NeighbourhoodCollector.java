@@ -23,7 +23,7 @@ public class NeighbourhoodCollector extends AbstractTwitterApp
     SnowballCollector collector = new SnowballCollector ();
     collector.initialise ();
 
-    Neighbourhood n = collector.collectNeighbourhoodOf (seedHandle); // profile, follower IDs, followee IDs
+    Neighbourhood n = collector.collectNeighbourhoodOf (seedHandle, true); // profile, follower IDs, followee IDs
 
     System.out.printf ("Profile %s (%d)\n", n.profile.getName (), n.profile.getId ());
     System.out.println ("Followed by: " + n.followerIDs.size ());
