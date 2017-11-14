@@ -9,7 +9,7 @@ Twiget is my collection of experiments and utilities to gather Twitter data.
 Takes a commandline argument specifying a seeds file in csv form, where the last column is the Twitter ID. The file might simply be a list of IDs, or a list of rows with the screen name and then the ID,
 separated by a comma.
 
-An optional flag is '--no-proxy', which will tell the script to not look for proxy settings in `/home/\`whoami\`/.gradle/gradle.properties`.
+An optional flag is '--no-proxy', which will tell the script to not look for proxy settings in `/home/'whoami'/.gradle/gradle.properties`.
 
 Assuming an input file of `seeds.csv`, a file will be produced titled something like `seeds-corpus.json` which includes as many tweets as could be gathered from the list of seeds, with each tweet being a JSON blob on each line of the file, along with another file called `failed_ids-CURRENT_DATETIME.txt` (where `CURRENT_DATETIME` is replaced with a formatted string of the current date/time value), which is list of the IDs which failed to collect anything due to an error (i.e. an exception occurred while attempting to collect the tweets). This can then form the input to another run of this program to attempt to gather more tweets, as sometimes the attempt to gather tweets for a given ID simply fails once but works the next time.
 
